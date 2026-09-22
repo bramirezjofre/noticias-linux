@@ -76,6 +76,20 @@ All config is via environment variables (loaded from `.env`):
 | `TELEGRAM_CHAT_ID` | *(required)* | Destination chat id |
 | `NOTICIAS_POR_FEED` | `1` | Articles to summarize per feed |
 | `MAX_CONTEXTO_NOTICIA` | `1000` | Max chars fed to the LLM per article |
+| `MAX_EDAD_DIAS` | `7` | Max age (days) of articles to include. `0` = no filter |
+| `OLLAMA_TIMEOUT` | `150` | Per-request timeout (seconds) for Ollama |
+
+### How article selection works
+
+For each feed, entries are:
+
+1. **Filtered by age** — anything older than `MAX_EDAD_DIAS` is discarded.
+2. **Sorted by publication date** — newest first (`published_parsed`,
+   falls back to `updated_parsed`).
+3. **Truncated** to the top `NOTICIAS_POR_FEED`.
+
+Entries without a parsable date are kept and pushed to the bottom of the
+list (the feed presumably treats them as current).
 
 ## Security notes
 

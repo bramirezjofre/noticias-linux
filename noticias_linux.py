@@ -54,6 +54,14 @@ OLLAMA_TIMEOUT = int(
     os.getenv("OLLAMA_TIMEOUT", "150")
 )
 
+# Edad máxima de una noticia (en días).
+# Noticias más viejas se ignoran para evitar
+# revivir contenido antiguo cuando el feed
+# trae mezclado histórico. 0 = sin límite.
+MAX_EDAD_DIAS = int(
+    os.getenv("MAX_EDAD_DIAS", "7")
+)
+
 
 # ============================================================
 # FEEDS RSS
@@ -589,6 +597,105 @@ def descargar_feed(url):
 
 
 # ============================================================
+# FECHA DE UNA ENTRADA
+# ============================================================
+
+def fecha_entry(entry):
+    """
+    Devuelve la fecha de publicación de un entry como
+    datetime, usando published_parsed o updated_parsed
+    como fallback. None si el feed no trae fecha.
+    """
+    import datetime as _dt
+
+    ts = entry.get("published_parsed") or entry.get(
+        "updated_parsed"
+    )
+
+    if not ts:
+        return None
+
+    try:
+        return _dt.datetime(
+            *ts[:6],
+            tzinfo=_dt.timezone.utc
+        )
+    except Exception:
+        return None
+
+
+def seleccionar_mejores_entries(
+    feed,
+    maximo,
+    max_edad_dias
+):
+    """
+    Devuelve hasta `maximo` entradas, ordenadas de
+    más reciente a más vieja.
+
+    Si max_edad_dias > 0, descarta entradas más
+    viejas que esa ventana. Entradas sin fecha se
+    incluyen al final (asumimos que son nuevas
+    si el feed no las pudo fechar).
+    """
+    import datetime as _dt
+
+    ahora = _dt.datetime.now(
+        _dt.timezone.utc
+    )
+
+    entradas = list(feed.entries)
+
+    # Filtra por edad si corresponde
+    if max_edad_dias > 0:
+        filtradas = []
+        for e in entradas:
+            fecha = fecha_entry(e)
+            if fecha is None:
+                # Sin fecha: las dejamos pasar al
+                # final; el feed probablemente es
+                # reciente.
+                filtradas.append(
+                    (_dt.datetime.min.replace(
+                        tzinfo=_dt.timezone.utc
+                    ), e)
+                )
+                continue
+
+            edad = ahora - fecha
+            if edad.days <= max_edad_dias:
+                filtradas.append((fecha, e))
+            else:
+                print(
+                    f"    [-] Descartada por edad "
+                    f"({edad.days}d): "
+                    f"{e.get('title', '')[:60]}"
+                )
+        entradas_con_fecha = filtradas
+    else:
+        entradas_con_fecha = [
+            (
+                fecha_entry(e)
+                or _dt.datetime.min.replace(
+                    tzinfo=_dt.timezone.utc
+                ),
+                e
+            )
+            for e in entradas
+        ]
+
+    # Ordena de más reciente a más viejo
+    entradas_con_fecha.sort(
+        key=lambda x: x[0],
+        reverse=True
+    )
+
+    return [
+        e for _, e in entradas_con_fecha[:maximo]
+    ]
+
+
+# ============================================================
 # FORMATEAR NOTICIA PARA TELEGRAM
 # ============================================================
 
@@ -714,9 +821,25 @@ def main():
 
                 continue
 
-            entradas = feed.entries[
-                :NOTICIAS_POR_FEED
-            ]
+            entradas = seleccionar_mejores_entries(
+                feed,
+                NOTICIAS_POR_FEED,
+                MAX_EDAD_DIAS
+            )
+
+            if not entradas:
+                print(
+                    "    [!] El feed no contiene "
+                    "noticias dentro de la ventana."
+                )
+
+                continue
+
+            if len(entradas) < NOTICIAS_POR_FEED:
+                print(
+                    f"    [i] {len(entradas)}/{NOTICIAS_POR_FEED} "
+                    "noticias tras filtrar."
+                )
 
             reporte_feed = (
                 f"🐧 {nombre_feed}\n"
