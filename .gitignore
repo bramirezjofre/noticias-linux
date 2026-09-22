@@ -1,6 +1,109 @@
-.env
-.venv/
+# ── Python ────────────────────────────────────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Tests / coverage
+.coverage
+.coverage.*
+.cache
+coverage.xml
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+.hypothesis/
+.pyre/
+.mypy_cache/
+.ruff_cache/
+
+# ── Secrets / config ───────────────────────────────────────────────────
+# Never commit real environment files. .env.example is the template.
+.env
+.env.*
+!.env.example
+
+# ── Logs ───────────────────────────────────────────────────────────────
+logs/
 *.log
+
+# ── OS / editor scratch ────────────────────────────────────────────────
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Linux
+*~
+.nfs*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Editors
+*.swp
+*.swo
+*.swn
+*~
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+
+# ── Misc / accidental artifacts ────────────────────────────────────────
+*.bak
+*.tmp
+*.old
+*.orig
+*.rej
+*.tar.gz
+*.zip
+*.tgz
+node_modules/
+
+# ── Ollama / local model artifacts (just in case) ──────────────────────
+.ollama/
+ollama.log
